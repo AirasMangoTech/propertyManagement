@@ -16,6 +16,10 @@ app.use('/api/auth', authRoutes);
 const agentAuthRoutes = require('./routes/agentAuthRoutes');
 app.use('/api/auth', agentAuthRoutes);
 
+
+
+const dashboardRoutes = require('./routes/dashboardRoutes');
+app.use('/api', dashboardRoutes);
 app.post('/api/upload', upload.array('images', 5), async (req, res) => {
   try {
     const files = req.files;
