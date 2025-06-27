@@ -60,3 +60,56 @@ exports.login = async (req, res) => {
         return sendError(res, 'Login failed', 500, err.message);
     }
 };
+exports.getAgents = async (req, res) => {
+    try {
+        // Query params
+        const { page = 1, limit = 10, search = '' } = req.query;
+
+        const query = {
+            $or: [
+                { name: { $regex: search, $options: 'i' } },
+                { location: { $regex: search, $options: 'i' } },
+                { address: { $regex: search, $options: 'i' } },
+                { type: { $regex: search, $options: 'i' } },
+                { purpose: { $regex: search, $options: 'i' } },
+                { category: { $regex: search, $options: 'i' } }
+            ]
+        };
+
+        const skip = (parseInt(page) - 1) * parseInt(limit);
+        const total = await User.countDocuments(query);
+        const agents = await User.find(query)
+            .skip(skip)
+            .limit(parseInt(limit))
+            .sort({ createdAt: -1 });
+
+        return sendSuccess(res, 'Agents fetched successfully', {
+            agents,
+            count: total,
+
+
+        });
+    } catch (err) {
+        return sendError(res, 'Failed to fetch agents', 500, err.message);
+    }
+};
+
+exports.deleteAgent = async (req, res) => {
+    try {
+        const agent = await User.findByIdAndDelete(req.params.id);
+        if (!agent) return sendError(res, 'Agent not found', 404);
+        return sendSuccess(res, 'Agent deleted successfully');
+    } catch (err) {
+        return sendError(res, 'Failed to delete Agent', 500, err.message);
+    }
+};
+
+exports.getAgentById = async (req, res) => {
+    try {
+        const agent = await User.findById(req.params.id);
+        if (!agent) return sendError(res, 'agent not found', 404);
+        return sendSuccess(res, 'Agent fetched successfully', { agent });
+    } catch (err) {
+        return sendError(res, 'Failed to fetch agent', 500, err.message);
+    }
+};
