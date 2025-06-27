@@ -10,6 +10,8 @@ const propertySchema = new mongoose.Schema({
     location: String,
     refno: String,
     features: [String],
+    latitude:Number,
+    longitude:Number,
     beds: Number,
     baths: Number,
     description: String,
