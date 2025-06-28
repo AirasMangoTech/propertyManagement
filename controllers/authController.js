@@ -56,3 +56,45 @@ exports.login = async (req, res) => {
         return sendError(res, 'Login failed', 500, err.message);
     }
 };
+
+exports.getInvestors = async (req, res) => {
+    try {
+        // Query params
+        const { page = 1, limit = 10, search = '' } = req.query;
+
+        const query = {
+            role: 'investor', // ✅ Only fetch users with role = 'investor'
+            $or: [
+                { name: { $regex: search, $options: 'i' } },
+                { location: { $regex: search, $options: 'i' } },
+                { address: { $regex: search, $options: 'i' } },
+                { type: { $regex: search, $options: 'i' } },
+                { purpose: { $regex: search, $options: 'i' } },
+                { category: { $regex: search, $options: 'i' } }
+            ]
+        };
+
+        const skip = (parseInt(page) - 1) * parseInt(limit);
+        const total = await User.countDocuments(query);
+        const properties = await User.find(query)
+            .skip(skip)
+            .limit(parseInt(limit))
+            .sort({ createdAt: -1 });
+
+        return sendSuccess(res, 'Investors fetched successfully', {
+            properties,
+            count: total,
+        });
+    } catch (err) {
+        return sendError(res, 'Failed to fetch investors', 500, err.message);
+    }
+};
+exports.deleteInvestor = async (req, res) => {
+    try {
+        const user = await User.findByIdAndDelete(req.params.id);
+        if (!user) return sendError(res, 'investor not found', 404);
+        return sendSuccess(res, 'investor deleted successfully');
+    } catch (err) {
+        return sendError(res, 'Failed to delete investor', 500, err.message);
+    }
+};
