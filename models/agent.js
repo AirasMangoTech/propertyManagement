@@ -6,7 +6,9 @@ const agentSchema = new mongoose.Schema({
     password: String,
     phone: String,
     address: String,
-    image:String,
+    image: String,
+    doc: String,
+    rera_id: String,
     role: { type: String, default: 'agent' }  // optional
 });
 

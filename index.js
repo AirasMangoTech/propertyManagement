@@ -37,6 +37,27 @@ app.post('/api/upload', upload.array('images', 5), async (req, res) => {
     res.status(500).json({ message: 'Upload failed', error: error.message });
   }
 });
+
+
+app.post('/api/docUpload', upload.single('file'), async (req, res) => {
+  try {
+    const file = req.file;
+
+    if (!file) {
+      return res.status(400).json({ message: 'No file provided' });
+    }
+
+    // ✅ Use the same helper function
+    const url = await uploadToCloudinary(file.buffer, 'documents');
+
+    res.status(200).json({ message: 'File uploaded successfully', url });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'File upload failed', error: error.message });
+  }
+});
+
+
 mongoose.connect(process.env.MONGO_URI, {
     useNewUrlParser: true, useUnifiedTopology: true
 }).then(() => {
