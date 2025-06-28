@@ -4,6 +4,7 @@ const userSchema = new mongoose.Schema({
     name: String,
     email: { type: String, unique: true },
     password: String,
+    properties:Array,
     role: { type: String, default: 'investor' }  // optional
 });
 
