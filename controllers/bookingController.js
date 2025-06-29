@@ -4,6 +4,16 @@ const cron = require('node-cron');
 
 exports.createBooking = async (req, res) => {
     try {
+        const { date, time, property_id } = req.body;
+
+        // Check if booking already exists for the same date, time, and property
+        const existingBooking = await Booking.findOne({ date, time, property_id });
+
+        if (existingBooking) {
+            return sendError(res, 'Booking already exists for the selected date and time slot.', 400);
+        }
+
+        // If no conflict, proceed with saving the new booking
         const booking = new Booking(req.body);
         await booking.save();
         return sendSuccess(res, 'Booking created successfully', { booking }, 200);
@@ -11,6 +21,7 @@ exports.createBooking = async (req, res) => {
         return sendError(res, 'Something went wrong while creating the booking', 500, err.message);
     }
 };
+
 
 exports.getBookings = async (req, res) => {
   try {
