@@ -3,8 +3,8 @@ const mongoose = require('mongoose');
 const agentSchema = new mongoose.Schema({
     name: String,
     email: String,
-    agent_id:Number,
-    property_id:Number,
+    agent_id:String,
+    property_id:String,
     doc: String,
     date:Date,
     time:String,
