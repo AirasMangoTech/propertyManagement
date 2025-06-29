@@ -2,34 +2,39 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 require('dotenv').config();
-const {uploadToCloudinary,upload} = require('./upload/index');
+const { uploadToCloudinary, upload } = require('./upload/index');
+
 const app = express();
 const PORT = process.env.PORT || 5000;
 
 app.use(cors());
 app.use(express.json());
 
+// Routes
 const propertyRoutes = require('./routes/propertyRoutes');
-app.use('/api/properties', propertyRoutes);
 const authRoutes = require('./routes/authRoutes');
-app.use('/api/auth', authRoutes);
 const agentAuthRoutes = require('./routes/agentAuthRoutes');
-app.use('/api/auth', agentAuthRoutes);
-
-
-
+const bookingRoutes = require('./routes/bookingRoutes');
 const dashboardRoutes = require('./routes/dashboardRoutes');
+
+app.use('/api/properties', propertyRoutes);
+app.use('/api/auth', authRoutes);
+app.use('/api/auth', agentAuthRoutes); // consider merging if duplicate
+app.use('/api/bookings', bookingRoutes);
 app.use('/api', dashboardRoutes);
+
+// Upload multiple images
 app.post('/api/upload', upload.array('images', 5), async (req, res) => {
   try {
     const files = req.files;
-    console.log(files,'files');
-    
+
     if (!files || files.length === 0) {
       return res.status(400).json({ message: 'No images provided' });
     }
 
-    const urls = await Promise.all(files.map(file => uploadToCloudinary(file.buffer)));
+    const urls = await Promise.all(
+      files.map(file => uploadToCloudinary(file.buffer))
+    );
 
     res.status(200).json({ message: 'Images uploaded successfully', urls });
   } catch (error) {
@@ -38,7 +43,7 @@ app.post('/api/upload', upload.array('images', 5), async (req, res) => {
   }
 });
 
-
+// Upload single doc or PDF/image
 app.post('/api/docUpload', upload.single('file'), async (req, res) => {
   try {
     const file = req.file;
@@ -47,7 +52,6 @@ app.post('/api/docUpload', upload.single('file'), async (req, res) => {
       return res.status(400).json({ message: 'No file provided' });
     }
 
-    // ✅ Use the same helper function
     const url = await uploadToCloudinary(file.buffer, 'documents');
 
     res.status(200).json({ message: 'File uploaded successfully', url });
@@ -57,10 +61,14 @@ app.post('/api/docUpload', upload.single('file'), async (req, res) => {
   }
 });
 
-
-mongoose.connect(process.env.MONGO_URI, {
-    useNewUrlParser: true, useUnifiedTopology: true
-}).then(() => {
+// Connect to DB and start server
+mongoose
+  .connect(process.env.MONGO_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  })
+  .then(() => {
     console.log('MongoDB Connected');
     app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
-}).catch(err => console.error(err));
+  })
+  .catch(err => console.error('MongoDB connection error:', err));

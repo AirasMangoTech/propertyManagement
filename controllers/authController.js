@@ -111,3 +111,20 @@ exports.getInvestorById = async (req, res) => {
         return sendError(res, 'Failed to fetch investor', 500, err.message);
     }
 };
+
+
+exports.updateInvestor = async (req, res) => {
+    try {
+        const { id, ...updateData } = req.body;
+
+        if (!id) return sendError(res, 'user ID is required in body', 400);
+
+        const user = await User.findByIdAndUpdate(id, updateData, { new: true });
+
+        if (!user) return sendError(res, 'user not found', 404);
+
+        return sendSuccess(res, 'user updated successfully', { user });
+    } catch (err) {
+        return sendError(res, 'Failed to update user', 500, err.message);
+    }
+};
