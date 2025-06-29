@@ -9,7 +9,7 @@ const {
     deleteBooking
 } = require('../controllers/bookingController');
 
-router.post('/booking/create',auth, createBooking);
+router.post('/booking/create', createBooking);
 router.get('/getbookings', getBookings);
 router.get('/getbooking/:id', getBookingById);
 router.patch('/updatebooking',auth, updateBooking);
