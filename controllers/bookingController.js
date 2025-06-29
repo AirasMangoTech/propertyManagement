@@ -25,13 +25,14 @@ exports.createBooking = async (req, res) => {
 
 
 
+
 exports.getBookings = async (req, res) => {
   try {
-    const { page = 1, limit = 10, search = "", status } = req.query;
+    const { page = 1, limit = 10, search = "", status } = req.query
 
-    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const skip = (Number.parseInt(page) - 1) * Number.parseInt(limit)
 
-    const match = {};
+    const match = {}
 
     if (search && search.trim() !== "") {
       match.$or = [
@@ -41,38 +42,46 @@ exports.getBookings = async (req, res) => {
         { type: { $regex: search, $options: "i" } },
         { purpose: { $regex: search, $options: "i" } },
         { category: { $regex: search, $options: "i" } },
-      ];
+      ]
     }
 
     if (status && status.trim() !== "") {
-      match.status = status.trim().toLowerCase();
+      match.status = status.trim().toLowerCase()
     }
 
-    const total = await Booking.countDocuments(match);
-    const distinctStatuses = await Booking.distinct("status");
+    const total = await Booking.countDocuments(match)
+
+    const distinctStatuses = await Booking.distinct("status")
 
     const bookings = await Booking.aggregate([
       { $match: match },
       { $sort: { createdAt: -1 } },
       { $skip: skip },
-      { $limit: parseInt(limit) },
-
+      { $limit: Number.parseInt(limit) },
       // This step joins the `property_id` with the `_id` in the `properties` collection
       {
         $lookup: {
           from: "properties", // actual MongoDB collection name
-          localField: "property_id",
-          foreignField: "id",
-          as: "property"
-        }
+          let: { propertyId: "$property_id" },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $eq: ["$_id", { $toObjectId: "$$propertyId" }],
+                },
+              },
+            },
+          ],
+          as: "property",
+        },
       },
       {
         $unwind: {
           path: "$property",
-          preserveNullAndEmptyArrays: true
-        }
-      }
-    ]);
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+    ])
 
     return sendSuccess(res, "Bookings fetched successfully", {
       bookings,
@@ -80,14 +89,15 @@ exports.getBookings = async (req, res) => {
       debug: {
         receivedStatus: status,
         queryUsed: match,
-        availableStatuses: distinctStatuses
-      }
-    });
+        availableStatuses: distinctStatuses,
+      },
+    })
   } catch (err) {
-    console.error("Error in getBookings:", err);
-    return sendError(res, "Failed to fetch bookings", 500, err.message);
+    console.error("Error in getBookings:", err)
+    return sendError(res, "Failed to fetch bookings", 500, err.message)
   }
-};
+}
+
 
 
 
