@@ -62,7 +62,7 @@ exports.getBookings = async (req, res) => {
         $lookup: {
           from: "properties", // actual MongoDB collection name
           localField: "property_id",
-          foreignField: "_id",
+          foreignField: "id",
           as: "property"
         }
       },
