@@ -7,13 +7,15 @@ const { sendSuccess, sendError } = require('../helpers/responseHelper');
 const JWT_SECRET = process.env.JWT_SECRET || 'your_secret_key';
 
 exports.signup = async (req, res) => {
-    const { name, email, password } = req.body;
+    const { name, email, password,properties} = req.body;
+    console.log(properties,'properties');
+    
     try {
         const existingUser = await User.findOne({ email });
         if (existingUser) return sendError(res, 'User already exists', 400);
 
         const hashedPassword = await bcrypt.hash(password, 10);
-        const user = new User({ name, email, password: hashedPassword });
+        const user = new User({ name, email, password: hashedPassword,properties });
         await user.save();
 
         const token = jwt.sign({ id: user._id }, JWT_SECRET, { expiresIn: '7d' });
@@ -23,6 +25,7 @@ exports.signup = async (req, res) => {
             name: user.name,
             email: user.email,
             role: user.role,
+            properties:user?.properties,
             token
         };
 
