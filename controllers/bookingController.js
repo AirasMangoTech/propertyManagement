@@ -13,42 +13,62 @@ exports.createBooking = async (req, res) => {
 };
 
 exports.getBookings = async (req, res) => {
-    try {
-        const { page = 1, limit = 10, search = '', status } = req.query;
+  try {
+    const { page = 1, limit = 10, search = "", status } = req.query
 
-        // Start building the query with search filters
-        const query = {
-            $or: [
-                { name: { $regex: search, $options: 'i' } },
-                { location: { $regex: search, $options: 'i' } },
-                { address: { $regex: search, $options: 'i' } },
-                { type: { $regex: search, $options: 'i' } },
-                { purpose: { $regex: search, $options: 'i' } },
-                { category: { $regex: search, $options: 'i' } }
-            ]
-        };
+    // Debug: Log the received status
+    console.log("Received status:", status, "Type:", typeof status)
 
-        // If user has provided a status (e.g., "pending" or "approved"), add it to the query
-        if (status) {
-            query.status = status;
-        }
+    // Start building the query with search filters
+    const query = {}
 
-        const skip = (parseInt(page) - 1) * parseInt(limit);
-        const total = await Booking.countDocuments(query);
-
-        const bookings = await Booking.find(query)
-            .skip(skip)
-            .limit(parseInt(limit))
-            .sort({ createdAt: -1 });
-
-        return sendSuccess(res, 'Bookings fetched successfully', {
-            bookings,
-            count: total
-        });
-    } catch (err) {
-        return sendError(res, 'Failed to fetch bookings', 500, err.message);
+    // Only add search filters if search term is provided
+    if (search && search.trim() !== "") {
+      query.$or = [
+        { name: { $regex: search, $options: "i" } },
+        { location: { $regex: search, $options: "i" } },
+        { address: { $regex: search, $options: "i" } },
+        { type: { $regex: search, $options: "i" } },
+        { purpose: { $regex: search, $options: "i" } },
+        { category: { $regex: search, $options: "i" } },
+      ]
     }
-};
+
+    // If user has provided a status, add it to the query
+    if (status && status.trim() !== "") {
+      // Trim whitespace and convert to lowercase for consistent matching
+      query.status = status.trim().toLowerCase()
+    }
+
+    // Debug: Log the final query
+    console.log("Final query:", JSON.stringify(query, null, 2))
+
+    const skip = (Number.parseInt(page) - 1) * Number.parseInt(limit)
+
+    // Debug: Check what statuses exist in the database
+    const distinctStatuses = await Booking.distinct("status")
+    console.log("Available statuses in DB:", distinctStatuses)
+
+    const total = await Booking.countDocuments(query)
+    console.log("Total matching documents:", total)
+
+    const bookings = await Booking.find(query).skip(skip).limit(Number.parseInt(limit)).sort({ createdAt: -1 })
+
+    return sendSuccess(res, "Bookings fetched successfully", {
+      bookings,
+      count: total,
+      // Include debug info in response (remove in production)
+      debug: {
+        receivedStatus: status,
+        queryUsed: query,
+        availableStatuses: distinctStatuses,
+      },
+    })
+  } catch (err) {
+    console.error("Error in getBookings:", err)
+    return sendError(res, "Failed to fetch bookings", 500, err.message)
+  }
+}
 
 
 
