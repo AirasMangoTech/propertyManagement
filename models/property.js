@@ -23,7 +23,7 @@ const propertySchema = new mongoose.Schema({
     payment_terms: String,
     timing: String,
     status: { type: String, default: "pending" },
-    bookedDates: [Date],
+    bookedDate: Date,
 }, { timestamps: true });
 
 module.exports = mongoose.model('Property', propertySchema);

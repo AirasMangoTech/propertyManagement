@@ -1,5 +1,6 @@
 const Booking = require('../models/booking');
 const { sendSuccess, sendError } = require('../helpers/responseHelper');
+const cron = require('node-cron');
 
 exports.createBooking = async (req, res) => {
     try {
@@ -13,9 +14,9 @@ exports.createBooking = async (req, res) => {
 
 exports.getBookings = async (req, res) => {
     try {
-        // Query params
-        const { page = 1, limit = 10, search = '' } = req.query;
+        const { page = 1, limit = 10, search = '', status } = req.query;
 
+        // Start building the query with search filters
         const query = {
             $or: [
                 { name: { $regex: search, $options: 'i' } },
@@ -27,23 +28,29 @@ exports.getBookings = async (req, res) => {
             ]
         };
 
+        // If user has provided a status (e.g., "pending" or "approved"), add it to the query
+        if (status) {
+            query.status = status;
+        }
+
         const skip = (parseInt(page) - 1) * parseInt(limit);
         const total = await Booking.countDocuments(query);
-        const properties = await Booking.find(query)
+
+        const bookings = await Booking.find(query)
             .skip(skip)
             .limit(parseInt(limit))
             .sort({ createdAt: -1 });
 
-        return sendSuccess(res, 'Properties fetched successfully', {
-            properties,
-            count: total,
-
-
+        return sendSuccess(res, 'Bookings fetched successfully', {
+            bookings,
+            count: total
         });
     } catch (err) {
-        return sendError(res, 'Failed to fetch properties', 500, err.message);
+        return sendError(res, 'Failed to fetch bookings', 500, err.message);
     }
 };
+
+
 
 exports.getBookingById = async (req, res) => {
     try {
@@ -81,3 +88,15 @@ exports.deleteBooking = async (req, res) => {
         return sendError(res, 'Failed to delete booking', 500, err.message);
     }
 };
+
+
+// Runs every day at 12:00 AM
+cron.schedule('0 0 * * *', async () => {
+    try {
+        const now = new Date();
+        const result = await Booking.deleteMany({ date: { $lt: now } });
+        console.log(`[CRON] Deleted ${result.deletedCount} expired bookings`);
+    } catch (error) {
+        console.error('[CRON] Error deleting expired bookings:', error.message);
+    }
+});
