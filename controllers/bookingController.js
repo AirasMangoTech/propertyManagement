@@ -1,4 +1,5 @@
 const Booking = require('../models/booking');
+const Property = require('../models/property');
 const { sendSuccess, sendError } = require('../helpers/responseHelper');
 const cron = require('node-cron');
 
@@ -27,10 +28,10 @@ exports.getBookings = async (req, res) => {
   try {
     const { page = 1, limit = 10, search = "", status } = req.query;
 
-    const query = {};
+    const match = {};
 
     if (search && search.trim() !== "") {
-      query.$or = [
+      match.$or = [
         { name: { $regex: search, $options: "i" } },
         { location: { $regex: search, $options: "i" } },
         { address: { $regex: search, $options: "i" } },
@@ -41,34 +42,39 @@ exports.getBookings = async (req, res) => {
     }
 
     if (status && status.trim() !== "") {
-      query.status = status.trim().toLowerCase();
+      match.status = status.trim().toLowerCase();
     }
 
-    const skip = (Number.parseInt(page) - 1) * Number.parseInt(limit);
+    const skip = (parseInt(page) - 1) * parseInt(limit);
 
-    const total = await Booking.countDocuments(query);
-    const distinctStatuses = await Booking.distinct("status");
+    const total = await Booking.countDocuments(match);
 
-    const bookings = await Booking.find(query)
-      .skip(skip)
-      .limit(Number.parseInt(limit))
-      .sort({ createdAt: -1 })
-      .populate("property_id"); // This will include the full property object
+    const bookings = await Booking.aggregate([
+      { $match: match },
+      { $sort: { createdAt: -1 } },
+      { $skip: skip },
+      { $limit: parseInt(limit) },
+      {
+        $lookup: {
+          from: "properties", // name of the collection (check in MongoDB)
+          localField: "property_id",
+          foreignField: "_id",
+          as: "property"
+        }
+      },
+      { $unwind: { path: "$property", preserveNullAndEmptyArrays: true } }
+    ]);
 
     return sendSuccess(res, "Bookings fetched successfully", {
       bookings,
-      count: total,
-      debug: {
-        receivedStatus: status,
-        queryUsed: query,
-        availableStatuses: distinctStatuses,
-      },
+      count: total
     });
   } catch (err) {
     console.error("Error in getBookings:", err);
     return sendError(res, "Failed to fetch bookings", 500, err.message);
   }
 };
+
 
 
 
