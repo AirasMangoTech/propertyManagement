@@ -10,8 +10,8 @@ const propertySchema = new mongoose.Schema({
     location: String,
     refno: String,
     features: [String],
-    latitude:Number,
-    longitude:Number,
+    latitude: Number,
+    longitude: Number,
     beds: Number,
     baths: Number,
     description: String,
@@ -21,9 +21,10 @@ const propertySchema = new mongoose.Schema({
         enum: ['furnished', 'unfurnished'],
     },
     payment_terms: String,
-    timing: String,
+    agents: Array,
+    timing: Array,
     status: { type: String, default: "pending" },
-    bookedDate: Date,
+    bookedDates: Array,
 }, { timestamps: true });
 
 module.exports = mongoose.model('Property', propertySchema);

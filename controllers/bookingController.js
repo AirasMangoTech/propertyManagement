@@ -113,20 +113,58 @@ exports.getBookingById = async (req, res) => {
 };
 
 exports.updateBooking = async (req, res) => {
-    try {
-        const { id, ...updateData } = req.body;
+  try {
+    const { id, ...updateData } = req.body
 
-        if (!id) return sendError(res, 'Booking ID is required in body', 400);
+    if (!id) return sendError(res, "Booking ID is required in body", 400)
 
-        const booking = await Booking.findByIdAndUpdate(id, updateData, { new: true });
+    // Update the booking
+    const booking = await Booking.findByIdAndUpdate(id, updateData, { new: true })
 
-        if (!booking) return sendError(res, 'Booking not found', 404);
+    if (!booking) return sendError(res, "Booking not found", 404)
 
-        return sendSuccess(res, 'Booking updated successfully', { booking });
-    } catch (err) {
-        return sendError(res, 'Failed to update booking', 500, err.message);
+    // If status is approved, update the property
+    if (updateData.status === "approved" && updateData.property_id) {
+      const propertyUpdates = {}
+
+      // Add booked dates if booking has date information
+      if (booking.startDate && booking.endDate) {
+        propertyUpdates.$push = {
+          bookedDates: {
+            startDate: booking.startDate,
+            endDate: booking.endDate,
+            bookingId: booking._id,
+          },
+        }
+      } else if (booking.date) {
+        // If single date
+        propertyUpdates.$push = {
+          bookedDates: {
+            date: booking.date,
+            bookingId: booking._id,
+          },
+        }
+      }
+
+      // Add agent to agents array if not already present
+      if (updateData.agent_id) {
+        propertyUpdates.$addToSet = {
+          agents: updateData.agent_id,
+        }
+      }
+
+      // Update property if there are updates to make
+      if (Object.keys(propertyUpdates).length > 0) {
+        await Property.findByIdAndUpdate(updateData.property_id, propertyUpdates)
+      }
     }
-};
+
+    return sendSuccess(res, "Booking updated successfully", { booking })
+  } catch (err) {
+    console.error("Error in updateBooking:", err)
+    return sendError(res, "Failed to update booking", 500, err.message)
+  }
+}
 
 
 exports.deleteBooking = async (req, res) => {
