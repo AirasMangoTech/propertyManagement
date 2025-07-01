@@ -15,6 +15,7 @@ const propertySchema = new mongoose.Schema({
     beds: Number,
     baths: Number,
     description: String,
+    investors: [String],
     images: [String],
     category: {
         type: String,

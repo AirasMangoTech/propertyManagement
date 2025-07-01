@@ -44,6 +44,39 @@ exports.getProperties = async (req, res) => {
         return sendError(res, 'Failed to fetch properties', 500, err.message);
     }
 };
+exports.getProperties = async (req, res) => {
+    try {
+        // Query params
+        const { page = 1, limit = 10, search = '' } = req.query;
+
+        const query = {
+            $or: [
+                { name: { $regex: search, $options: 'i' } },
+                { location: { $regex: search, $options: 'i' } },
+                { address: { $regex: search, $options: 'i' } },
+                { type: { $regex: search, $options: 'i' } },
+                { purpose: { $regex: search, $options: 'i' } },
+                { category: { $regex: search, $options: 'i' } }
+            ]
+        };
+
+        const skip = (parseInt(page) - 1) * parseInt(limit);
+        const total = await Property.countDocuments(query);
+        const properties = await Property.find(query)
+            .skip(skip)
+            .limit(parseInt(limit))
+            .sort({ createdAt: -1 });
+
+        return sendSuccess(res, 'Properties fetched successfully', {
+            properties,
+            count: total,
+
+
+        });
+    } catch (err) {
+        return sendError(res, 'Failed to fetch properties', 500, err.message);
+    }
+};
 
 exports.getPropertyById = async (req, res) => {
     try {
