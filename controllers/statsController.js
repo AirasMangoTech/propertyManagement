@@ -2,7 +2,7 @@
 const Property = require('../models/property'); // ✅ Correct model
 const Agent = require('../models/agent');       // ✅ Agent model
 const Booking = require('../models/booking');   // ✅ Booking model
-const User = require('../models/user'); 
+const User = require('../models/user');
 
 exports.getStats = async (req, res) => {
     try {
@@ -23,41 +23,45 @@ exports.getStats = async (req, res) => {
     }
 };
 exports.getInvestorStats = async (req, res) => {
-  try {
-    const { id } = req.query;
+    try {
+        const { id } = req.query;
+        console.log(id, 'ididididid');
 
-    if (!id) {
-      return res.status(400).json({ message: 'Investor ID is required' });
+        if (!id) {
+            return res.status(400).json({ message: 'Investor ID is required' });
+        }
+
+        // Check if the user is an investor
+        const investor = await User.findById(id);
+        console.log(investor,'investorinvestor');
+        
+        if (!investor || investor.role !== 'investor') {
+            return res.status(404).json({ message: 'Investor not found or invalid role' });
+        }
+
+        // Get all properties owned by the investor
+        const properties = investor?.properties;
+
+        // Count total properties
+        const totalProperties = properties.length;
+        console.log(properties, 'propertiesproperties');
+
+        // Sum visitCount from all properties using reduce
+        const totalVisitCount = properties.reduce((sum, prop) => {
+            return sum + (prop.visitCount || 0);
+        }, 0);
+
+        return res.status(200).json({
+            investor: investor.name,
+            totalProperties,
+            totalVisitCount
+        });
+    } catch (error) {
+        console.error('Investor Stats Error:', error);
+        return res.status(500).json({
+            message: 'Failed to get investor stats',
+            error: error.message
+        });
     }
-
-    // Check if the user is an investor
-    const investor = await User.findById(id);
-    if (!investor || investor.role !== 'investor') {
-      return res.status(404).json({ message: 'Investor not found or invalid role' });
-    }
-
-    // Get all properties owned by the investor
-    const properties = await Property.find({ userId: id });
-
-    // Count total properties
-    const totalProperties = properties.length;
-
-    // Sum visitCount from all properties using reduce
-    const totalVisitCount = properties.reduce((sum, prop) => {
-      return sum + (prop.visitCount || 0);
-    }, 0);
-
-    return res.status(200).json({
-      investor: investor.name,
-      totalProperties,
-      totalVisitCount
-    });
-  } catch (error) {
-    console.error('Investor Stats Error:', error);
-    return res.status(500).json({
-      message: 'Failed to get investor stats',
-      error: error.message
-    });
-  }
 };
 
