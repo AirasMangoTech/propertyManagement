@@ -7,5 +7,5 @@ router.post('/login', login);
 router.get('/investors', getInvestors);
 router.delete('/investors/delete/:id', deleteInvestor);
 router.get('/investors/detail/:id', getInvestorById);
-router.patch('/investors/update/:id', updateInvestor);
+router.patch('/investors/update', updateInvestor);
 module.exports = router;
