@@ -50,7 +50,7 @@ exports.getBookings = async (req, res) => {
     }
 
     if (agent_id && agent_id.trim() !== "") {
-      match.created_by = agent_id.trim();
+      match.agent_id = agent_id.trim();
     }
 
     const total = await Booking.countDocuments(match);
