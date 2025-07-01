@@ -4,7 +4,7 @@ const { getStats,getInvestorStats } = require('../controllers/statsController');
 
 router.get('/stats', getStats);
 
-router.get('/investorStats', getInvestorStats);
+router.get('/investorstats', getInvestorStats);
 
 
 module.exports = router;

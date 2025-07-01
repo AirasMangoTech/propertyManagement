@@ -23,7 +23,7 @@ exports.getStats = async (req, res) => {
 };
 exports.getInvestorStats = async (req, res) => {
   try {
-    const { id } = req.params;
+    const { id } = req.query;
 
     if (!id) {
       return res.status(400).json({ message: 'Investor ID is required' });
