@@ -95,10 +95,12 @@ exports.getInvestors = async (req, res) => {
 
 exports.getInvestorsProperty = async (req, res) => {
     try {
-        const { id } = req.params;
+        const { id } = req.query;
 
         // Fetch investor
         const investor = await User.findById(id);
+        console.log(investor,'investor');
+        
         if (!investor || investor.role !== 'investor') {
             return sendError(res, 'Investor not found or invalid role', 404);
         }
