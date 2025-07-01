@@ -1,7 +1,7 @@
 // statsController.js
 const Property = require('../models/property'); // ✅ Correct model
 const Agent = require('../models/agent');       // ✅ Agent model
-const Booking = require('../models/Booking');   // ✅ Booking model
+const Booking = require('../models/booking');   // ✅ Booking model
 
 exports.getStats = async (req, res) => {
     try {
