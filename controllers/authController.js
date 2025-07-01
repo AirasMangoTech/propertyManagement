@@ -98,7 +98,7 @@ exports.getInvestorsProperty = async (req, res) => {
         const { id } = req.query;
 
         // Fetch investor
-        const investor = await User.findById(id);
+        const investor = await User.findById(id).populate('properties');
         console.log(investor,'investor');
         
         if (!investor || investor.role !== 'investor') {
