@@ -23,23 +23,33 @@ exports.getStats = async (req, res) => {
 };
 exports.getInvestorStats = async (req, res) => {
   try {
-    // Count total investors
-    const totalInvestors = await User.countDocuments({ role: 'investor' });
+    const { id } = req.params;
 
-    // Optional: count properties owned by investors (if using `userId` in Property model)
-    const investorProperties = await Property.countDocuments({
-      userId: { $exists: true }
-    });
+    if (!id) {
+      return res.status(400).json({ message: 'Investor ID is required' });
+    }
 
-    // Optional: total bookings made by investors (if stored)
-    const investorBookings = await Booking.countDocuments({
-      userId: { $exists: true }
-    });
+    // Check if the user is an investor
+    const investor = await User.findById(id);
+    if (!investor || investor.role !== 'investor') {
+      return res.status(404).json({ message: 'Investor not found or invalid role' });
+    }
+
+    // Get all properties owned by the investor
+    const properties = await Property.find({ userId: id });
+
+    // Count total properties
+    const totalProperties = properties.length;
+
+    // Sum visitCount from all properties using reduce
+    const totalVisitCount = properties.reduce((sum, prop) => {
+      return sum + (prop.visitCount || 0);
+    }, 0);
 
     return res.status(200).json({
-      totalInvestors,
-      investorProperties,
-      investorBookings
+      investor: investor.name,
+      totalProperties,
+      totalVisitCount
     });
   } catch (error) {
     console.error('Investor Stats Error:', error);
@@ -49,3 +59,4 @@ exports.getInvestorStats = async (req, res) => {
     });
   }
 };
+
