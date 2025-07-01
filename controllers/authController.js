@@ -119,7 +119,7 @@ exports.updateInvestor = async (req, res) => {
 
         if (!id) return sendError(res, 'user ID is required in body', 400);
 
-        const user = await User.findByIdAndUpdate(id, updateData, { new: true });
+        const user = await User.findByIdAndUpdate(_id, updateData, { new: true });
 
         if (!user) return sendError(res, 'user not found', 404);
 
