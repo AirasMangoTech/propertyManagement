@@ -16,6 +16,7 @@ const propertySchema = new mongoose.Schema({
     baths: Number,
     description: String,
     images: [String],
+    
     category: String,
     payment_terms: String,
     status: { type: String, default: 'pending' },
@@ -28,7 +29,7 @@ const userSchema = new mongoose.Schema({
     name: String,
     email: { type: String, unique: true },
     password: String,
-    properties: [propertySchema], // ✅ array of property objects
+    properties: [{type: Object}], 
     role: { type: String, default: 'investor' }
 });
 
