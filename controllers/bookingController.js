@@ -170,6 +170,29 @@ exports.updateBooking = async (req, res) => {
   }
 }
 
+exports.updateFeedback = async (req, res) => {
+  try {
+    const { id, feedback } = req.body;
+
+    if (!id) return sendError(res, "Booking ID is required", 400);
+    if (!feedback || typeof feedback !== 'object')
+      return sendError(res, "Feedback object is required", 400);
+
+    // Update the feedback field
+    const booking = await Booking.findByIdAndUpdate(
+      id,
+      { feedback },
+      { new: true }
+    );
+
+    if (!booking) return sendError(res, "Booking not found", 404);
+
+    return sendSuccess(res, "Feedback updated successfully", { booking });
+  } catch (err) {
+    console.error("Error in updateFeedback:", err);
+    return sendError(res, "Failed to update feedback", 500, err.message);
+  }
+};
 
 exports.deleteBooking = async (req, res) => {
     try {
@@ -182,12 +205,16 @@ exports.deleteBooking = async (req, res) => {
 };
 
 
-// Runs every day at 12:00 AM
+
+
 cron.schedule('0 0 * * *', async () => {
     try {
         const now = new Date();
-        const result = await Booking.deleteMany({ date: { $lt: now } });
-        console.log(`[CRON] Deleted ${result.deletedCount} expired bookings`);
+        const result = await Booking.deleteMany({
+            date: { $lt: now },
+            status: 'pending' // ✅ Only delete bookings with pending status
+        });
+        console.log(`[CRON] Deleted ${result.deletedCount} expired pending bookings`);
     } catch (error) {
         console.error('[CRON] Error deleting expired bookings:', error.message);
     }

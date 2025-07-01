@@ -9,6 +9,14 @@ const agentSchema = new mongoose.Schema({
     date:Date,
     time:String,
     notes:String,
+    feedback: {
+        interested:Boolean,
+        rating: { type: Number },      
+        comment: { type: String },     
+        submittedAt: { type: Date, default: Date.now } ,
+       
+        
+    },
     status: {type:String,default:'pending'}  // optional
 });
 
