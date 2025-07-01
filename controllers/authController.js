@@ -127,14 +127,16 @@ exports.deleteInvestor = async (req, res) => {
 };
 
 exports.getInvestorById = async (req, res) => {
-    try {
-        const user = await User.findById(req.params.id);
-        if (!user) return sendError(res, 'investor not found', 404);
-        return sendSuccess(res, 'investor fetched successfully', { user });
-    } catch (err) {
-        return sendError(res, 'Failed to fetch investor', 500, err.message);
-    }
+  try {
+    const user = await User.findById(req.params.id).populate('properties');
+    if (!user) return sendError(res, 'Investor not found', 404);
+
+    return sendSuccess(res, 'Investor fetched successfully', { user });
+  } catch (err) {
+    return sendError(res, 'Failed to fetch investor', 500, err.message);
+  }
 };
+
 
 
 exports.updateInvestor = async (req, res) => {
