@@ -7,15 +7,15 @@ const { sendSuccess, sendError } = require('../helpers/responseHelper');
 const JWT_SECRET = process.env.JWT_SECRET || 'your_secret_key';
 
 exports.signup = async (req, res) => {
-    const { name, email, password,properties} = req.body;
-    console.log(properties,'properties');
-    
+    const { name, email, password, properties } = req.body;
+    console.log(properties, 'properties');
+
     try {
         const existingUser = await User.findOne({ email });
         if (existingUser) return sendError(res, 'User already exists', 400);
 
         const hashedPassword = await bcrypt.hash(password, 10);
-        const user = new User({ name, email, password: hashedPassword,properties });
+        const user = new User({ name, email, password: hashedPassword, properties });
         await user.save();
 
         const token = jwt.sign({ id: user._id }, JWT_SECRET, { expiresIn: '7d' });
@@ -25,7 +25,7 @@ exports.signup = async (req, res) => {
             name: user.name,
             email: user.email,
             role: user.role,
-            properties:user?.properties,
+            properties: user?.properties,
             token
         };
 
@@ -119,7 +119,11 @@ exports.updateInvestor = async (req, res) => {
 
         if (!id) return sendError(res, 'user ID is required in body', 400);
 
-        const user = await User.findByIdAndUpdate(_id, updateData, { new: true });
+        const user = await User.findOneAndUpdate(
+            { _id: id },
+            updateData,
+            { new: true }
+        );
 
         if (!user) return sendError(res, 'user not found', 404);
 
