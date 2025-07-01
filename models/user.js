@@ -29,7 +29,7 @@ const userSchema = new mongoose.Schema({
     name: String,
     email: { type: String, unique: true },
     password: String,
-    properties: [{type: Object}], 
+    properties: [{type: [mongoose.Schema.Types.ObjectId], ref: "Property"}], 
     role: { type: String, default: 'investor' }
 });
 

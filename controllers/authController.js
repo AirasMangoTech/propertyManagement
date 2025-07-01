@@ -79,7 +79,7 @@ exports.getInvestors = async (req, res) => {
 
         const skip = (parseInt(page) - 1) * parseInt(limit);
         const total = await User.countDocuments(query);
-        const investors = await User.find(query)
+        const investors = await User.find(query).populate("properties")
             .skip(skip)
             .limit(parseInt(limit))
             .sort({ createdAt: -1 });
