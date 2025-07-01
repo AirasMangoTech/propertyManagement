@@ -8,6 +8,7 @@ const propertySchema = new mongoose.Schema({
     area: String,
     address: String,
     location: String,
+    visitCount: Number,
     refno: String,
     features: [String],
     latitude: Number,

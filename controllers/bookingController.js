@@ -118,20 +118,22 @@ exports.getBookingById = async (req, res) => {
 
 exports.updateBooking = async (req, res) => {
   try {
-    const { id, ...updateData } = req.body
+    const { id, ...updateData } = req.body;
 
-    if (!id) return sendError(res, "Booking ID is required in body", 400)
+    if (!id) return sendError(res, "Booking ID is required in body", 400);
 
     // Update the booking
-    const booking = await Booking.findByIdAndUpdate(id, updateData, { new: true })
+    const booking = await Booking.findByIdAndUpdate(id, updateData, { new: true });
 
-    if (!booking) return sendError(res, "Booking not found", 404)
+    if (!booking) return sendError(res, "Booking not found", 404);
 
-    // If status is approved, update the property
+    // If status is approved, update the related property
     if (updateData.status === "approved" && updateData.property_id) {
-      const propertyUpdates = {}
+      const propertyUpdates = {
+        $inc: { visitCount: 1 }, // ✅ increment visit count
+      };
 
-      // Add booked dates if booking has date information
+      // Add booked dates
       if (booking.startDate && booking.endDate) {
         propertyUpdates.$push = {
           bookedDates: {
@@ -139,36 +141,34 @@ exports.updateBooking = async (req, res) => {
             endDate: booking.endDate,
             bookingId: booking._id,
           },
-        }
+        };
       } else if (booking.date) {
-        // If single date
         propertyUpdates.$push = {
           bookedDates: {
             date: booking.date,
             bookingId: booking._id,
           },
-        }
+        };
       }
 
-      // Add agent to agents array if not already present
+      // Add agent to agents array
       if (updateData.agent_id) {
         propertyUpdates.$addToSet = {
           agents: updateData.agent_id,
-        }
+        };
       }
 
-      // Update property if there are updates to make
-      if (Object.keys(propertyUpdates).length > 0) {
-        await Property.findByIdAndUpdate(updateData.property_id, propertyUpdates)
-      }
+      // Combine all updates into one atomic update
+      await Property.findByIdAndUpdate(updateData.property_id, propertyUpdates);
     }
 
-    return sendSuccess(res, "Booking updated successfully", { booking })
+    return sendSuccess(res, "Booking updated successfully", { booking });
   } catch (err) {
-    console.error("Error in updateBooking:", err)
-    return sendError(res, "Failed to update booking", 500, err.message)
+    console.error("Error in updateBooking:", err);
+    return sendError(res, "Failed to update booking", 500, err.message);
   }
-}
+};
+
 
 exports.updateFeedback = async (req, res) => {
   try {
