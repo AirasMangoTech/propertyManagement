@@ -7,7 +7,7 @@ exports.getStats = async (req, res) => {
     try {
         const totalProperties = await Property.countDocuments();
         const totalAgents = await Agent.countDocuments();
-        const totalBookings = await Booking.countDocuments();
+        const totalBookings = await Booking.countDocuments({ status: 'pending' });
         const totalApprovedBookings = await Booking.countDocuments({ status: 'approved' });
 
         return res.status(200).json({
