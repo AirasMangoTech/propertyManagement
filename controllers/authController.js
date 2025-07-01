@@ -95,45 +95,24 @@ exports.getInvestors = async (req, res) => {
 
 exports.getInvestorsProperty = async (req, res) => {
     try {
-        // Query params
-        const { id } = req.params; // assuming you're passing investor ID via route param
-        const { page = 1, limit = 10, search = '' } = req.query;
+        const { id } = req.params;
 
-        // Find the user by ID and check if they are an investor
+        // Fetch investor
         const investor = await User.findById(id);
         if (!investor || investor.role !== 'investor') {
             return sendError(res, 'Investor not found or invalid role', 404);
         }
 
-        // Build property search query
-        const query = {
-            _id: id, // adjust this field based on your schema
-            $or: [
-                { name: { $regex: search, $options: 'i' } },
-                { location: { $regex: search, $options: 'i' } },
-                { address: { $regex: search, $options: 'i' } },
-                { type: { $regex: search, $options: 'i' } },
-                { purpose: { $regex: search, $options: 'i' } },
-                { category: { $regex: search, $options: 'i' } }
-            ]
-        };
-
-        const skip = (parseInt(page) - 1) * parseInt(limit);
-        const total = await Property.countDocuments(query);
-        const properties = await Property.find(query)
-            .skip(skip)
-            .limit(parseInt(limit))
-            .sort({ createdAt: -1 });
-
-        return sendSuccess(res, 'Properties fetched successfully', {
+        return sendSuccess(res, 'Investor properties fetched successfully', {
             investor: investor.name,
-            properties,
-            count: total,
+            properties: investor.properties,
+            count: investor.properties.length,
         });
     } catch (err) {
         return sendError(res, 'Failed to fetch investor properties', 500, err.message);
     }
 };
+
 
 exports.deleteInvestor = async (req, res) => {
     try {
