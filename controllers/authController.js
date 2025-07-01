@@ -107,7 +107,7 @@ exports.getInvestorsProperty = async (req, res) => {
 
         // Build property search query
         const query = {
-            userId: id, // adjust this field based on your schema
+            _id: id, // adjust this field based on your schema
             $or: [
                 { name: { $regex: search, $options: 'i' } },
                 { location: { $regex: search, $options: 'i' } },
