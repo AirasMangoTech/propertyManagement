@@ -13,15 +13,10 @@ exports.createProperty = async (req, res) => {
 
 exports.getProperties = async (req, res) => {
     try {
-        // Query params
         const { page = 1, limit = 10, search = '', start_price, end_price } = req.query;
 
+        // Build query with search
         const query = {
-            $and: [],
-        };
-
-        // Add text search conditions
-        const textSearch = {
             $or: [
                 { name: { $regex: search, $options: 'i' } },
                 { location: { $regex: search, $options: 'i' } },
@@ -31,21 +26,30 @@ exports.getProperties = async (req, res) => {
                 { category: { $regex: search, $options: 'i' } }
             ]
         };
-        query.$and.push(textSearch);
 
-        // Add price filter if present
+        // Apply price filters
         if (start_price || end_price) {
-            const priceFilter = {};
-            if (start_price) priceFilter.$gte = parseFloat(start_price);
-            if (end_price) priceFilter.$lte = parseFloat(end_price);
-            query.$and.push({ price: priceFilter });
+            query.price = {};
+            if (start_price) query.price.$gte = parseFloat(start_price);
+            if (end_price) query.price.$lte = parseFloat(end_price);
         }
 
-        // Remove $and if empty (no filters applied)
-        if (query.$and.length === 0) delete query.$and;
-
         const skip = (parseInt(page) - 1) * parseInt(limit);
-        const total = await Property.countDocuments(query);
+
+        // Get all matched properties (no skip/limit) for min/max calculation
+        const matchedProperties = await Property.find(query).select('price');
+
+        const total = matchedProperties.length;
+
+        const min_price = matchedProperties.length > 0
+            ? Math.min(...matchedProperties.map(p => p.price))
+            : 0;
+
+        const max_price = matchedProperties.length > 0
+            ? Math.max(...matchedProperties.map(p => p.price))
+            : 0;
+
+        // Paginated results
         const properties = await Property.find(query)
             .skip(skip)
             .limit(parseInt(limit))
@@ -54,11 +58,14 @@ exports.getProperties = async (req, res) => {
         return sendSuccess(res, 'Properties fetched successfully', {
             properties,
             count: total,
+            min_price,
+            max_price
         });
     } catch (err) {
         return sendError(res, 'Failed to fetch properties', 500, err.message);
     }
 };
+
 
 
 
