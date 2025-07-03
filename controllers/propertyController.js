@@ -14,9 +14,14 @@ exports.createProperty = async (req, res) => {
 exports.getProperties = async (req, res) => {
     try {
         // Query params
-        const { page = 1, limit = 10, search = '' } = req.query;
+        const { page = 1, limit = 10, search = '', start_price, end_price } = req.query;
 
         const query = {
+            $and: [],
+        };
+
+        // Add text search conditions
+        const textSearch = {
             $or: [
                 { name: { $regex: search, $options: 'i' } },
                 { location: { $regex: search, $options: 'i' } },
@@ -26,6 +31,18 @@ exports.getProperties = async (req, res) => {
                 { category: { $regex: search, $options: 'i' } }
             ]
         };
+        query.$and.push(textSearch);
+
+        // Add price filter if present
+        if (start_price || end_price) {
+            const priceFilter = {};
+            if (start_price) priceFilter.$gte = parseFloat(start_price);
+            if (end_price) priceFilter.$lte = parseFloat(end_price);
+            query.$and.push({ price: priceFilter });
+        }
+
+        // Remove $and if empty (no filters applied)
+        if (query.$and.length === 0) delete query.$and;
 
         const skip = (parseInt(page) - 1) * parseInt(limit);
         const total = await Property.countDocuments(query);
@@ -37,46 +54,13 @@ exports.getProperties = async (req, res) => {
         return sendSuccess(res, 'Properties fetched successfully', {
             properties,
             count: total,
-
-
         });
     } catch (err) {
         return sendError(res, 'Failed to fetch properties', 500, err.message);
     }
 };
-exports.getProperties = async (req, res) => {
-    try {
-        // Query params
-        const { page = 1, limit = 10, search = '' } = req.query;
-
-        const query = {
-            $or: [
-                { name: { $regex: search, $options: 'i' } },
-                { location: { $regex: search, $options: 'i' } },
-                { address: { $regex: search, $options: 'i' } },
-                { type: { $regex: search, $options: 'i' } },
-                { purpose: { $regex: search, $options: 'i' } },
-                { category: { $regex: search, $options: 'i' } }
-            ]
-        };
-
-        const skip = (parseInt(page) - 1) * parseInt(limit);
-        const total = await Property.countDocuments(query);
-        const properties = await Property.find(query)
-            .skip(skip)
-            .limit(parseInt(limit))
-            .sort({ createdAt: -1 });
-
-        return sendSuccess(res, 'Properties fetched successfully', {
-            properties,
-            count: total,
 
 
-        });
-    } catch (err) {
-        return sendError(res, 'Failed to fetch properties', 500, err.message);
-    }
-};
 
 exports.getPropertyById = async (req, res) => {
     try {
