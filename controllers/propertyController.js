@@ -38,15 +38,15 @@ exports.getProperties = async (req, res) => {
 
         // Get all matched properties (no skip/limit) for min/max calculation
         const matchedProperties = await Property.find(query).select('price');
-
+        const allProperties = await Property.find().select('price');
         const total = matchedProperties.length;
 
-        const min_price = matchedProperties.length > 0
-            ? Math.min(...matchedProperties.map(p => p.price))
+        const min_price = allProperties.length > 0
+            ? Math.min(...allProperties.map(p => p.price))
             : 0;
 
-        const max_price = matchedProperties.length > 0
-            ? Math.max(...matchedProperties.map(p => p.price))
+        const max_price = allProperties.length > 0
+            ? Math.max(...allProperties.map(p => p.price))
             : 0;
 
         // Paginated results
