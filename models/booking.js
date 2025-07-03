@@ -9,13 +9,9 @@ const agentSchema = new mongoose.Schema({
     date:Date,
     time:String,
     notes:String,
-    feedback: {
-        interested:Boolean,
-        rating: { type: Number },      
-        comment: { type: String },     
-        submittedAt: { type: Date, default: Date.now } ,
-       
-        
+     feedback: {
+        type: mongoose.Schema.Types.Mixed, // Allows any structure
+        default: null, // Ensures feedback is null initially
     },
     status: {type:String,default:'pending'}  // optional
 });
