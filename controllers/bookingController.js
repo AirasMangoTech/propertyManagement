@@ -28,13 +28,18 @@ exports.createBooking = async (req, res) => {
 
 exports.getBookings = async (req, res) => {
   try {
-    const { page = 1, limit = 10, search = "", status, agent_id } = req.query;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const search = req.query.search?.trim() || "";
+    const status = req.query.status?.trim().toLowerCase();
+    const agent_id = req.query.agent_id?.trim();
 
-    const skip = (Number.parseInt(page) - 1) * Number.parseInt(limit);
+    const skip = (page - 1) * limit;
 
     const match = {};
 
-    if (search && search.trim() !== "") {
+    // Search filters
+    if (search !== "") {
       match.$or = [
         { name: { $regex: search, $options: "i" } },
         { location: { $regex: search, $options: "i" } },
@@ -45,53 +50,33 @@ exports.getBookings = async (req, res) => {
       ];
     }
 
-    if (status && status.trim() !== "") {
-      match.status = status.trim().toLowerCase();
-    }
+    // Filters
+    if (status) match.status = status;
+    if (agent_id) match.agent_id = agent_id;
 
-    if (agent_id && agent_id.trim() !== "") {
-      match.agent_id = agent_id.trim();
-    }
-
+    // Count total
     const total = await Booking.countDocuments(match);
+
+    // Get distinct statuses
     const distinctStatuses = await Booking.distinct("status");
 
-    const bookings = await Booking.aggregate([
-      { $match: match },
-      { $sort: { createdAt: -1 } },
-      { $skip: skip },
-      { $limit: Number.parseInt(limit) },
-      {
-        $lookup: {
-          from: "properties",
-          let: { propertyId: "$property_id" },
-          pipeline: [
-            {
-              $match: {
-                $expr: {
-                  $eq: ["$_id", { $toObjectId: "$$propertyId" }],
-                },
-              },
-            },
-          ],
-          as: "property",
-        },
-      },
-      {
-        $unwind: {
-          path: "$property",
-          preserveNullAndEmptyArrays: true,
-        },
-      },
-    ]);
+    // Fetch bookings with pagination, sorting, and populated property
+    const bookings = await Booking.find(match)
+      .populate("property_id")
+
+      .skip(skip)
+      .limit(limit);
 
     return sendSuccess(res, "Bookings fetched successfully", {
       bookings,
       count: total,
+      totalPages: Math.ceil(total / limit),
+      currentPage: page,
+      limitPerPage: limit,
       debug: {
+        queryUsed: match,
         receivedStatus: status,
         receivedAgentId: agent_id,
-        queryUsed: match,
         availableStatuses: distinctStatuses,
       },
     });
@@ -100,6 +85,8 @@ exports.getBookings = async (req, res) => {
     return sendError(res, "Failed to fetch bookings", 500, err.message);
   }
 };
+
+
 
 
 
