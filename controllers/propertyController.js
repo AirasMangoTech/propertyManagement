@@ -13,7 +13,7 @@ exports.createProperty = async (req, res) => {
 
 exports.getProperties = async (req, res) => {
     try {
-        const { page = 1, limit = 10, search = '', start_price, end_price } = req.query;
+        const { page = 1, limit = 10, search = '', start_price, end_price, type, purpose } = req.query;
 
         // Build query with search
         const query = {
@@ -32,6 +32,8 @@ exports.getProperties = async (req, res) => {
             query.price = {};
             if (start_price) query.price.$gte = parseFloat(start_price);
             if (end_price) query.price.$lte = parseFloat(end_price);
+            if (type) query.type = type;
+            if (purpose) query.purpose = purpose
         }
 
         const skip = (parseInt(page) - 1) * parseInt(limit);
