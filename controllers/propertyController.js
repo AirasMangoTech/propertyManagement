@@ -32,9 +32,13 @@ exports.getProperties = async (req, res) => {
             query.price = {};
             if (start_price) query.price.$gte = parseFloat(start_price);
             if (end_price) query.price.$lte = parseFloat(end_price);
-            if (type) query.type = type;
-            if (purpose) query.purpose = purpose
         }
+
+        // Add type and purpose filters outside price condition
+        if (type) query.type = type;
+        if (purpose) query.purpose = purpose;
+
+
 
         const skip = (parseInt(page) - 1) * parseInt(limit);
 
@@ -52,6 +56,7 @@ exports.getProperties = async (req, res) => {
             : 0;
 
         // Paginated results
+        console.log(query)
         const properties = await Property.find(query)
             .skip(skip)
             .limit(parseInt(limit))
