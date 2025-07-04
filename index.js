@@ -2,6 +2,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 require('dotenv').config();
+const nodemailer = require('nodemailer');
 const { uploadToCloudinary, upload } = require('./upload/index');
 
 const app = express();
@@ -22,6 +23,50 @@ app.use('/api/auth', authRoutes);
 app.use('/api/auth', agentAuthRoutes); // consider merging if duplicate
 app.use('/api/bookings', bookingRoutes);
 app.use('/api', dashboardRoutes);
+
+
+
+
+app.post('/api/contact', async (req, res) => {
+  const { name, email, message } = req.body;
+
+  if (!name || !email || !message) {
+    return res.status(400).json({ message: 'All fields are required' });
+  }
+
+  try {
+    // Create transporter
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
+      },
+    });
+
+    
+    const mailOptions = {
+      from: email,
+      to: process.env.EMAIL_USER,
+      subject: `New Contact Form Submission from ${name}`,
+      html: `
+        <h3>New Contact Message</h3>
+        <p><strong>Name:</strong> ${name}</p>
+        <p><strong>Email:</strong> ${email}</p>
+        <p><strong>Message:</strong><br/>${message}</p>
+      `,
+    };
+
+
+    await transporter.sendMail(mailOptions);
+
+    res.status(200).json({ message: 'Message sent successfully' });
+  } catch (error) {
+    console.error('Error sending email:', error);
+    res.status(500).json({ message: 'Failed to send message', error: error.message });
+  }
+});
+
 
 // Upload multiple images
 app.post('/api/upload', upload.array('images', 5), async (req, res) => {

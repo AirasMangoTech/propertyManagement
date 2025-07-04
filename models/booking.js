@@ -10,16 +10,10 @@ const agentSchema = new mongoose.Schema({
     time: String,
     notes: String,
     feedback: {
-
-        interested: Boolean,
-        rating: Number,
-        comment:String,
-        reason:String,
-        is_offer:[String],
-        
-
-
-    },
+        type: Object,
+        default: null
+    }
+    ,
     status: { type: String, default: 'pending' }  // optional
 });
 
