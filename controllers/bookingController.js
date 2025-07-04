@@ -38,7 +38,7 @@ exports.getBookings = async (req, res) => {
 
     const match = {};
 
-    // Search filters
+    // Search match
     if (search !== "") {
       match.$or = [
         { name: { $regex: search, $options: "i" } },
@@ -50,22 +50,40 @@ exports.getBookings = async (req, res) => {
       ];
     }
 
-    // Filters
+    // Filter match
     if (status) match.status = status;
     if (agent_id) match.agent_id = agent_id;
 
-    // Count total
+    // Count total records
     const total = await Booking.countDocuments(match);
 
-    // Get distinct statuses
+    // Get available statuses (for filtering frontend)
     const distinctStatuses = await Booking.distinct("status");
 
-    // Fetch bookings with pagination, sorting, and populated property
-    const bookings = await Booking.find(match)
-      .populate("property_id")
-
-      .skip(skip)
-      .limit(limit);
+    // Fetch paginated bookings
+    const bookings = await Booking.aggregate([
+      { $match: match },
+      {
+        $lookup: {
+          from: "properties",
+          let: { propertyId: "$property_id" },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $eq: ["$_id", { $toObjectId: "$$propertyId" }],
+                },
+              },
+            },
+          ],
+          as: "property",
+        },
+      },
+      { $unwind: { path: "$property", preserveNullAndEmptyArrays: true } },
+     
+      { $skip: skip },
+      { $limit: limit },
+    ]);
 
     return sendSuccess(res, "Bookings fetched successfully", {
       bookings,
