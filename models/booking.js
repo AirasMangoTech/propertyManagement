@@ -15,7 +15,8 @@ const agentSchema = new mongoose.Schema({
         rating: Number,
         comment:String,
         reason:String,
-        is_offer:[String]
+        is_offer:[String],
+        
 
 
     },
