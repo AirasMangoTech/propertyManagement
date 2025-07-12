@@ -34,6 +34,7 @@ const propertySchema = new mongoose.Schema({
 
     // Optional: keep for compatibility if needed
     status: { type: String, default: "pending" },
+    
     createdAt: { type: Date, default: Date.now },
     updatedAt: { type: Date, default: Date.now }
 }, { timestamps: true });
