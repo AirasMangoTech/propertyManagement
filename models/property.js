@@ -3,30 +3,39 @@ const mongoose = require('mongoose');
 const propertySchema = new mongoose.Schema({
     name: String,
     price: Number,
+    unit_number: String,
+    selling_price_sqft: Number,
+
     type: String,
-    purpose: String,
+    rental_price: Number,
     area: String,
+    rental_price_per_sqft: Number,
     address: String,
-    location: String,
-    visitCount: Number,
-    refno: String,
+    annual_rent: Number,
+
     features: [String],
-    latitude: Number,
-    longitude: Number,
-    beds: Number,
-    baths: Number,
+    service_charges: Number,
+    rented_vacant: String, // Could also be Boolean depending on how you handle it
+
+    parking_space: Number,
+    category: String,
+    comments: String,
+    purpose: String,
     description: String,
-    investors: [String],
+
     images: [String],
-    category: {
-        type: String,
-        enum: ['furnished', 'unfurnished'],
-    },
-    payment_terms: String,
-    agents: Array,
-    timing: Array,
+    brochureDocumment: String, // Consider renaming to `brochureDocument` (typo?)
+    buildingLayout: String,
+
+    tenure_years: Number,
+    contract_value: Number,
+    lease_start_date: Date,
+    lease_end_date: Date,
+
+    // Optional: keep for compatibility if needed
     status: { type: String, default: "pending" },
-    bookedDates: Array,
+    createdAt: { type: Date, default: Date.now },
+    updatedAt: { type: Date, default: Date.now }
 }, { timestamps: true });
 
 module.exports = mongoose.model('Property', propertySchema);
