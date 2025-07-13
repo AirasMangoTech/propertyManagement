@@ -27,14 +27,14 @@ const propertySchema = new mongoose.Schema({
     brochureDocumment: String, // Consider renaming to `brochureDocument` (typo?)
     buildingLayout: String,
 
-    tenure_years: Number,
+    tenure_years: String,
     contract_value: Number,
     lease_start_date: Date,
     lease_end_date: Date,
 
     // Optional: keep for compatibility if needed
     status: { type: String, default: "pending" },
-    
+
     createdAt: { type: Date, default: Date.now },
     updatedAt: { type: Date, default: Date.now }
 }, { timestamps: true });
