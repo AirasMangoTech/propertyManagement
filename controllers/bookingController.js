@@ -60,7 +60,7 @@ exports.getBookings = async (req, res) => {
     // Get available statuses (for filtering frontend)
     const distinctStatuses = await Booking.distinct("status");
 
-    // Fetch paginated bookings
+    // Fetch paginated bookings sorted by latest first
     const bookings = await Booking.aggregate([
       { $match: match },
       {
@@ -80,7 +80,10 @@ exports.getBookings = async (req, res) => {
         },
       },
       { $unwind: { path: "$property", preserveNullAndEmptyArrays: true } },
-     
+
+      // Sort by creation date (latest first)
+      { $sort: { date: -1 } },
+
       { $skip: skip },
       { $limit: limit },
     ]);
