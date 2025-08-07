@@ -14,7 +14,8 @@ const agentSchema = new mongoose.Schema({
         default: null
     }
     ,
-    status: { type: String, default: 'pending' }  // optional
-});
+    status: { type: String, default: 'pending' } , // optional
+    createdAt: { type: Date, default: Date.now },
+}, { timestamps: true });
 
 module.exports = mongoose.model('booking', agentSchema);

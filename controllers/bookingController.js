@@ -82,7 +82,7 @@ exports.getBookings = async (req, res) => {
       { $unwind: { path: "$property", preserveNullAndEmptyArrays: true } },
 
       // Sort by creation date (latest first)
-      { $sort: { date: -1 } },
+      { $sort: { createdAt: -1 } },
 
       { $skip: skip },
       { $limit: limit },
@@ -206,6 +206,7 @@ exports.deleteBooking = async (req, res) => {
     try {
         const booking = await Booking.findByIdAndDelete(req.params.id);
         if (!booking) return sendError(res, 'Booking not found', 404);
+   
         return sendSuccess(res, 'Booking deleted successfully');
     } catch (err) {
         return sendError(res, 'Failed to delete booking', 500, err.message);

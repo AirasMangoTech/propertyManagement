@@ -1,4 +1,5 @@
 const Property = require('../models/property');
+const Booking = require('../models/booking');
 const { sendSuccess, sendError } = require('../helpers/responseHelper');
 
 exports.createProperty = async (req, res) => {
@@ -107,6 +108,8 @@ exports.deleteProperty = async (req, res) => {
     try {
         const property = await Property.findByIdAndDelete(req.params.id);
         if (!property) return sendError(res, 'Property not found', 404);
+        // Step 2: Delete all bookings associated with this agent
+        await Booking.deleteMany({ property_id: property._id.toString() });
         return sendSuccess(res, 'Property deleted successfully');
     } catch (err) {
         return sendError(res, 'Failed to delete property', 500, err.message);

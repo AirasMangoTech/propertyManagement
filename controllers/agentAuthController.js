@@ -1,5 +1,6 @@
 // controllers/authController.js
 const User = require('../models/agent');
+const Booking = require('../models/booking');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { sendSuccess, sendError } = require('../helpers/responseHelper');
@@ -96,14 +97,21 @@ exports.getAgents = async (req, res) => {
 };
 
 exports.deleteAgent = async (req, res) => {
-    try {
-        const agent = await User.findByIdAndDelete(req.params.id);
-        if (!agent) return sendError(res, 'Agent not found', 404);
-        return sendSuccess(res, 'Agent deleted successfully');
-    } catch (err) {
-        return sendError(res, 'Failed to delete Agent', 500, err.message);
-    }
+  try {
+    // Step 1: Delete the agent
+    const agent = await User.findByIdAndDelete(req.params.id);
+    if (!agent) return sendError(res, 'Agent not found', 404);
+
+    // Step 2: Delete all bookings associated with this agent
+    await Booking.deleteMany({ agent_id: agent._id.toString() });
+
+    return sendSuccess(res, 'Agent and related bookings deleted successfully');
+  } catch (err) {
+    console.error("Error deleting agent and their bookings:", err);
+    return sendError(res, 'Failed to delete agent and their bookings', 500, err.message);
+  }
 };
+
 
 exports.getAgentById = async (req, res) => {
     try {

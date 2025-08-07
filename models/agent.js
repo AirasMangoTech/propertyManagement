@@ -9,7 +9,8 @@ const agentSchema = new mongoose.Schema({
     image: String,
     rera_doc: String,
     rera_id: String,
-    role: { type: String, default: 'agent' }  // optional
-});
+    role: { type: String, default: 'agent' },  // optional
+    createdAt: { type: Date, default: Date.now },
+}, { timestamps: true });
 
 module.exports = mongoose.model('Agent', agentSchema);
