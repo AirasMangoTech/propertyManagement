@@ -14,7 +14,7 @@ exports.signup = async (req, res) => {
         if (existingUser) return sendError(res, 'Agent already exists', 400);
 
         const hashedPassword = await bcrypt.hash(password, 10);
-        const user = new User({ name, email, password: hashedPassword, image, address, phone });
+        const user = new User({ name, email, password: hashedPassword, image, address, phone, status: 'pending' });
         await user.save();
 
         const token = jwt.sign({ id: user._id }, JWT_SECRET, { expiresIn: '7d' });
@@ -35,6 +35,32 @@ exports.signup = async (req, res) => {
         return sendError(res, 'Signup failed', 500, err.message);
     }
 };
+
+exports.updateAgent = async (req, res) => {
+  try {
+    const { id, ...updateData } = req.body;
+
+    if (!id) return sendError(res, "Agent ID is required in body", 400);
+
+    // Update the agent
+    const agent = await User.findByIdAndUpdate(id, updateData, { new: true });
+
+    if (!agent) return sendError(res, "Agent not found", 404);
+
+    // If property_id provided, link agent to property
+    if (updateData.property_id) {
+      await Property.findByIdAndUpdate(updateData.property_id, {
+        $addToSet: { agents: agent._id }, // Avoid duplicate agent entries
+      });
+    }
+
+    return sendSuccess(res, "Agent updated successfully", { agent });
+  } catch (err) {
+    console.error("Error in updateAgent:", err);
+    return sendError(res, "Failed to update agent", 500, err.message);
+  }
+};
+
 
 exports.login = async (req, res) => {
     const { email, password } = req.body;
@@ -77,7 +103,12 @@ exports.getAgents = async (req, res) => {
                 { category: { $regex: search, $options: 'i' } }
             ]
         };
-
+        if (req.query?.status == 'pending') {
+            query.status = 'pending'
+        }
+        else{
+            query.status = {$ne: 'pending'}
+        }
         const skip = (parseInt(page) - 1) * parseInt(limit);
         const total = await User.countDocuments(query);
         const agents = await User.find(query)
@@ -97,19 +128,19 @@ exports.getAgents = async (req, res) => {
 };
 
 exports.deleteAgent = async (req, res) => {
-  try {
-    // Step 1: Delete the agent
-    const agent = await User.findByIdAndDelete(req.params.id);
-    if (!agent) return sendError(res, 'Agent not found', 404);
+    try {
+        // Step 1: Delete the agent
+        const agent = await User.findByIdAndDelete(req.params.id);
+        if (!agent) return sendError(res, 'Agent not found', 404);
 
-    // Step 2: Delete all bookings associated with this agent
-    await Booking.deleteMany({ agent_id: agent._id.toString() });
+        // Step 2: Delete all bookings associated with this agent
+        await Booking.deleteMany({ agent_id: agent._id.toString() });
 
-    return sendSuccess(res, 'Agent and related bookings deleted successfully');
-  } catch (err) {
-    console.error("Error deleting agent and their bookings:", err);
-    return sendError(res, 'Failed to delete agent and their bookings', 500, err.message);
-  }
+        return sendSuccess(res, 'Agent and related bookings deleted successfully');
+    } catch (err) {
+        console.error("Error deleting agent and their bookings:", err);
+        return sendError(res, 'Failed to delete agent and their bookings', 500, err.message);
+    }
 };
 
 

@@ -39,15 +39,16 @@ app.post('/api/contact', async (req, res) => {
     const transporter = nodemailer.createTransport({
       service: 'gmail',
       auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
+        user: process.env.SMTP_EMAIL,
+        pass: process.env.SMTP_PASS,
       },
+      port:465
     });
 
     
     const mailOptions = {
-      from: email,
-      to: process.env.EMAIL_USER,
+      from: process.env.SMTP_EMAIL,
+      to: email,
       subject: `New Contact Form Submission from ${name}`,
       html: `
         <h3>New Contact Message</h3>
@@ -56,6 +57,8 @@ app.post('/api/contact', async (req, res) => {
         <p><strong>Message:</strong><br/>${message}</p>
       `,
     };
+
+    
 
 
     await transporter.sendMail(mailOptions);

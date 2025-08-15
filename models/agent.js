@@ -9,6 +9,7 @@ const agentSchema = new mongoose.Schema({
     image: String,
     rera_doc: String,
     rera_id: String,
+    status:{type:String},
     role: { type: String, default: 'agent' },  // optional
     createdAt: { type: Date, default: Date.now },
 }, { timestamps: true });
