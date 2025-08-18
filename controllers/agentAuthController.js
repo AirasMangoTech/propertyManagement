@@ -14,7 +14,7 @@ exports.signup = async (req, res) => {
         if (existingUser) return sendError(res, 'Agent already exists', 400);
 
         const hashedPassword = await bcrypt.hash(password, 10);
-        const user = new User({ name, email, password: hashedPassword, image, address, phone, status: 'pending',});
+        const user = new User({ name, email, password: hashedPassword, image, address, phone, status: 'pending',rera_doc,rera_id});
         await user.save();
 
         const token = jwt.sign({ id: user._id }, JWT_SECRET, { expiresIn: '7d' });
