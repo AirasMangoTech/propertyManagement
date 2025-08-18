@@ -65,9 +65,8 @@ const createCustomerConfirmationEmail = (bookingData, propertyData) => {
                     </div>
                 </div>
 
-                ${
-                  property
-                    ? `
+                ${property
+      ? `
                 <!-- Property Details -->
                 <div style="background-color: #ffffff; border: 2px solid #e2e8f0; border-radius: 12px; overflow: hidden; margin-bottom: 30px;">
                     <div style="background-color: #2d3748; color: white; padding: 20px; text-align: center;">
@@ -100,66 +99,62 @@ const createCustomerConfirmationEmail = (bookingData, propertyData) => {
                             <div style="font-size: 16px; color: #2d3748; font-weight: 500;">${property.address}</div>
                         </div>
 
-                        ${
-                          property.features && property.features.length > 0
-                            ? `
+                        ${property.features && property.features.length > 0
+        ? `
                         <!-- Features -->
                         <div style="margin-bottom: 20px;">
                             <div style="font-size: 16px; color: #2d3748; font-weight: 600; margin-bottom: 10px;">✨ Features</div>
                             <div style="display: flex; flex-wrap: wrap; gap: 8px;">
                                 ${property.features
-                                  .map(
-                                    (feature) => `
+          .map(
+            (feature) => `
                                     <span style="background-color: #667eea; color: white; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 500;">${feature}</span>
                                 `,
-                                  )
-                                  .join("")}
+          )
+          .join("")}
                             </div>
                         </div>
                         `
-                            : ""
-                        }
+        : ""
+      }
 
-                        ${
-                          property.description
-                            ? `
+                        ${property.description
+        ? `
                         <!-- Description -->
                         <div style="margin-bottom: 20px;">
                             <div style="font-size: 16px; color: #2d3748; font-weight: 600; margin-bottom: 10px;">📝 Description</div>
                             <p style="color: #4a5568; line-height: 1.6; margin: 0;">${property.description}</p>
                         </div>
                         `
-                            : ""
-                        }
+        : ""
+      }
 
                         <!-- Additional Details -->
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; font-size: 14px;">
-                            ${
-                              property.service_charges
-                                ? `
+                            ${property.service_charges
+        ? `
                             <div>
                                 <span style="color: #4a5568;">Service Charges:</span>
                                 <span style="color: #2d3748; font-weight: 600; margin-left: 5px;">${property.service_charges}</span>
                             </div>
                             `
-                                : ""
-                            }
-                            ${
-                              property.parking_space
-                                ? `
+        : ""
+      }
+                            ${property.parking_space
+        ? `
                             <div>
                                 <span style="color: #4a5568;">Parking:</span>
                                 <span style="color: #2d3748; font-weight: 600; margin-left: 5px;">${property.parking_space}</span>
                             </div>
                             `
-                                : ""
-                            }
+        : ""
+      }
                         </div>
                     </div>
                 </div>
                 `
-                    : ""
-                }
+      : ""
+    }
 
                 <!-- Next Steps -->
                 <div style="background-color: #edf2f7; padding: 25px; border-radius: 8px; margin-bottom: 30px;">
@@ -254,9 +249,8 @@ const createAgentNotificationEmail = (bookingData, propertyData) => {
                     </div>
                 </div>
 
-                ${
-                  property
-                    ? `
+                ${property
+      ? `
                 <!-- Property Summary -->
                 <div style="background-color: #ffffff; border: 2px solid #e2e8f0; border-radius: 12px; overflow: hidden; margin-bottom: 30px;">
                     <div style="background-color: #2d3748; color: white; padding: 20px; text-align: center;">
@@ -287,8 +281,8 @@ const createAgentNotificationEmail = (bookingData, propertyData) => {
                     </div>
                 </div>
                 `
-                    : ""
-                }
+      : ""
+    }
 
                 <!-- Action Items -->
                 <div style="background-color: #fff5f5; border: 1px solid #fed7d7; padding: 25px; border-radius: 8px; margin-bottom: 30px;">
@@ -385,7 +379,7 @@ exports.createBooking = async (req, res) => {
 }
 
 exports.signupAndCreateBooking = async (req, res) => {
-  const { name, email, password, phone, image, address, date, time, property_id } = req.body;
+  const { name, email, password, phone, image, address, date, time, property_id, rera_doc, rera_id } = req.body;
 
   try {
     // Step 1: Check if user exists
@@ -401,6 +395,8 @@ exports.signupAndCreateBooking = async (req, res) => {
         image,
         address,
         phone,
+        rera_doc,
+        rera_id,
         status: "pending"
       });
       await user.save();
@@ -578,13 +574,13 @@ exports.getBookings = async (req, res) => {
 
 
 exports.getBookingById = async (req, res) => {
-    try {
-        const booking = await Booking.findById(req.params.id);
-        if (!booking) return sendError(res, 'Booking not found', 404);
-        return sendSuccess(res, 'Booking fetched successfully', { booking });
-    } catch (err) {
-        return sendError(res, 'Failed to fetch booking', 500, err.message);
-    }
+  try {
+    const booking = await Booking.findById(req.params.id);
+    if (!booking) return sendError(res, 'Booking not found', 404);
+    return sendSuccess(res, 'Booking fetched successfully', { booking });
+  } catch (err) {
+    return sendError(res, 'Failed to fetch booking', 500, err.message);
+  }
 };
 
 exports.updateBooking = async (req, res) => {
@@ -666,28 +662,28 @@ exports.updateFeedback = async (req, res) => {
 };
 
 exports.deleteBooking = async (req, res) => {
-    try {
-        const booking = await Booking.findByIdAndDelete(req.params.id);
-        if (!booking) return sendError(res, 'Booking not found', 404);
-   
-        return sendSuccess(res, 'Booking deleted successfully');
-    } catch (err) {
-        return sendError(res, 'Failed to delete booking', 500, err.message);
-    }
+  try {
+    const booking = await Booking.findByIdAndDelete(req.params.id);
+    if (!booking) return sendError(res, 'Booking not found', 404);
+
+    return sendSuccess(res, 'Booking deleted successfully');
+  } catch (err) {
+    return sendError(res, 'Failed to delete booking', 500, err.message);
+  }
 };
 
 
 
 
 cron.schedule('0 0 * * *', async () => {
-    try {
-        const now = new Date();
-        const result = await Booking.deleteMany({
-            date: { $lt: now },
-            status: 'pending' // ✅ Only delete bookings with pending status
-        });
-        console.log(`[CRON] Deleted ${result.deletedCount} expired pending bookings`);
-    } catch (error) {
-        console.error('[CRON] Error deleting expired bookings:', error.message);
-    }
+  try {
+    const now = new Date();
+    const result = await Booking.deleteMany({
+      date: { $lt: now },
+      status: 'pending' // ✅ Only delete bookings with pending status
+    });
+    console.log(`[CRON] Deleted ${result.deletedCount} expired pending bookings`);
+  } catch (error) {
+    console.error('[CRON] Error deleting expired bookings:', error.message);
+  }
 });

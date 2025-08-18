@@ -14,7 +14,7 @@ exports.signup = async (req, res) => {
         if (existingUser) return sendError(res, 'Agent already exists', 400);
 
         const hashedPassword = await bcrypt.hash(password, 10);
-        const user = new User({ name, email, password: hashedPassword, image, address, phone, status: 'pending' });
+        const user = new User({ name, email, password: hashedPassword, image, address, phone, status: 'pending', rera_doc, rera_id });
         await user.save();
 
         const token = jwt.sign({ id: user._id }, JWT_SECRET, { expiresIn: '7d' });
@@ -27,6 +27,8 @@ exports.signup = async (req, res) => {
             address: user.address,
             role: user.role,
             image: user?.image,
+            rera_doc: user?.rera_doc,
+            rera_id: user?.rera_id,
             token
         };
 
@@ -37,28 +39,28 @@ exports.signup = async (req, res) => {
 };
 
 exports.updateAgent = async (req, res) => {
-  try {
-    const { id, ...updateData } = req.body;
+    try {
+        const { id, ...updateData } = req.body;
 
-    if (!id) return sendError(res, "Agent ID is required in body", 400);
+        if (!id) return sendError(res, "Agent ID is required in body", 400);
 
-    // Update the agent
-    const agent = await User.findByIdAndUpdate(id, updateData, { new: true });
+        // Update the agent
+        const agent = await User.findByIdAndUpdate(id, updateData, { new: true });
 
-    if (!agent) return sendError(res, "Agent not found", 404);
+        if (!agent) return sendError(res, "Agent not found", 404);
 
-    // If property_id provided, link agent to property
-    if (updateData.property_id) {
-      await Property.findByIdAndUpdate(updateData.property_id, {
-        $addToSet: { agents: agent._id }, // Avoid duplicate agent entries
-      });
+        // If property_id provided, link agent to property
+        if (updateData.property_id) {
+            await Property.findByIdAndUpdate(updateData.property_id, {
+                $addToSet: { agents: agent._id }, // Avoid duplicate agent entries
+            });
+        }
+
+        return sendSuccess(res, "Agent updated successfully", { agent });
+    } catch (err) {
+        console.error("Error in updateAgent:", err);
+        return sendError(res, "Failed to update agent", 500, err.message);
     }
-
-    return sendSuccess(res, "Agent updated successfully", { agent });
-  } catch (err) {
-    console.error("Error in updateAgent:", err);
-    return sendError(res, "Failed to update agent", 500, err.message);
-  }
 };
 
 
@@ -106,8 +108,8 @@ exports.getAgents = async (req, res) => {
         if (req.query?.status == 'pending') {
             query.status = 'pending'
         }
-        else{
-            query.status = {$ne: 'pending'}
+        else {
+            query.status = { $ne: 'pending' }
         }
         const skip = (parseInt(page) - 1) * parseInt(limit);
         const total = await User.countDocuments(query);
