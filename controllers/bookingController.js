@@ -379,7 +379,7 @@ exports.createBooking = async (req, res) => {
 }
 
 exports.signupAndCreateBooking = async (req, res) => {
-  const { name, email, password, phone, image, address, date, time, property_id, rera_doc, rera_id } = req.body;
+  const { name, email, password, phone, image, address, date, time, property_id, rera_doc, rera_id,notes } = req.body;
 
   try {
     // Step 1: Check if user exists
