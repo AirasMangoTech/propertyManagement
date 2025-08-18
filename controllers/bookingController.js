@@ -420,6 +420,7 @@ exports.signupAndCreateBooking = async (req, res) => {
       email: user.email,
       name: user.name,
       agent_id: user._id,
+      notes
     });
     await booking.save();
 
