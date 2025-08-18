@@ -1,10 +1,13 @@
 const Booking = require('../models/booking');
+const User = require('../models/agent');
 const Property = require('../models/property');
 const { sendSuccess, sendError } = require('../helpers/responseHelper');
 const cron = require('node-cron');
 require('dotenv').config();
 const nodemailer = require('nodemailer');
-
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const JWT_SECRET = process.env.JWT_SECRET || 'your_secret_key';
 const createCustomerConfirmationEmail = (bookingData, propertyData) => {
   const { date, time, name, email } = bookingData
   const property = propertyData
@@ -381,6 +384,105 @@ exports.createBooking = async (req, res) => {
   }
 }
 
+exports.signupAndCreateBooking = async (req, res) => {
+  const { name, email, password, phone, image, address, date, time, property_id } = req.body;
+
+  try {
+    // Step 1: Check if user exists
+    let user = await User.findOne({ email });
+
+    if (!user) {
+      // If user doesn't exist → signup
+      const hashedPassword = await bcrypt.hash(password, 10);
+      user = new User({
+        name,
+        email,
+        password: hashedPassword,
+        image,
+        address,
+        phone,
+        status: "pending"
+      });
+      await user.save();
+    }
+
+    // Step 2: Check if booking already exists for property, date, and time
+    const existingBooking = await Booking.findOne({ date, time, property_id });
+    if (existingBooking) {
+      return sendError(res, "Booking already exists for the selected date and time slot.", 400);
+    }
+
+    // Step 3: Create new booking
+    const booking = new Booking({
+      date,
+      time,
+      property_id,
+      email: user.email,
+      name: user.name,
+      agent_id: user._id,
+    });
+    await booking.save();
+
+    // Step 4: Populate property details
+    const property = await Property.findById(property_id);
+
+    // Step 5: Setup email transporter
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: process.env.SMTP_EMAIL,
+        pass: process.env.SMTP_PASS,
+      },
+      port: 465,
+    });
+
+    // Step 6: Prepare booking data
+    const bookingData = { date, time, name: user.name, email: user.email };
+
+    // Step 7: Send email to customer
+    const customerMailOptions = {
+      from: process.env.SMTP_EMAIL,
+      to: user.email,
+      subject: `🏠 Booking Confirmed - ${date} at ${time}`,
+      html: createCustomerConfirmationEmail(bookingData, property),
+    };
+
+    // Step 8: Send email to agent
+    const agentMailOptions = {
+      from: process.env.SMTP_EMAIL,
+      to: user.email, // agent gets notified
+      subject: `🔔 New Property Viewing - ${date} at ${time}`,
+      html: createAgentNotificationEmail(bookingData, property),
+    };
+
+    await Promise.all([
+      transporter.sendMail(customerMailOptions),
+      transporter.sendMail(agentMailOptions),
+    ]);
+
+    // Step 9: Generate token
+    const token = jwt.sign({ id: user._id }, JWT_SECRET, { expiresIn: "7d" });
+
+    const responseData = {
+      user: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        address: user.address,
+        role: user.role,
+        image: user?.image,
+        token,
+      },
+      booking,
+    };
+
+    return sendSuccess(res, "Signup and booking created successfully", responseData, 200);
+  } catch (err) {
+    console.error("Error in signupAndCreateBooking:", err);
+    return sendError(res, "Something went wrong while processing signup & booking", 500, err.message);
+  }
+};
 
 
 
