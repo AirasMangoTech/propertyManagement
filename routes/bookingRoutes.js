@@ -15,7 +15,7 @@ router.post('/booking/create', createBooking);
 router.post('/booking/register/visit', signupAndCreateBooking);
 router.get('/getbookings', getBookings);
 router.get('/getbooking/:id', getBookingById);
-router.patch('/updatebooking',auth, updateBooking);
+router.patch('/updatebooking', updateBooking);
 router.patch('/create/feedback', updateFeedback);
 router.delete('/deletebooking/:id',auth, deleteBooking);
 

@@ -65,29 +65,38 @@ exports.updateAgent = async (req, res) => {
 
 
 exports.login = async (req, res) => {
-    const { email, password } = req.body;
-    try {
-        const user = await User.findOne({ email });
-        if (!user) return sendError(res, 'Invalid email or password', 400);
+  const { email, password } = req.body;
+  try {
+    const user = await User.findOne({ email });
+    if (!user) return sendError(res, "Invalid email or password", 400);
 
-        const isMatch = await bcrypt.compare(password, user.password);
-        if (!isMatch) return sendError(res, 'Invalid email or password', 400);
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) return sendError(res, "Invalid email or password", 400);
 
-        const token = jwt.sign({ id: user._id }, JWT_SECRET, { expiresIn: '7d' });
-
-        const userWithToken = {
-            _id: user._id,
-            name: user.name,
-            email: user.email,
-            role: user.role,
-            image: user?.image,
-            token
-        };
-
-        return sendSuccess(res, 'Login successful', { user: userWithToken });
-    } catch (err) {
-        return sendError(res, 'Login failed', 500, err.message);
+    // ✅ Block agent login if not approved
+    if (user.role === "agent" && user.status !== "approved") {
+      return sendError(
+        res,
+        "Your account is pending approval. Please wait for admin approval.",
+        403
+      );
     }
+
+    const token = jwt.sign({ id: user._id }, JWT_SECRET, { expiresIn: "7d" });
+
+    const userWithToken = {
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      image: user?.image,
+      token,
+    };
+
+    return sendSuccess(res, "Login successful", { user: userWithToken });
+  } catch (err) {
+    return sendError(res, "Login failed", 500, err.message);
+  }
 };
 exports.getAgents = async (req, res) => {
     try {

@@ -316,7 +316,14 @@ const createAgentNotificationEmail = (bookingData, propertyData) => {
     </html>
   `
 }
-
+// Configure mail transporter
+const transporter = nodemailer.createTransport({
+  service: "gmail", // Or configure SMTP
+  auth: {
+    user: process.env.SMTP_EMAIL,
+    pass: process.env.SMTP_PASS,
+  },
+});
 // Updated booking creation function with new email templates
 exports.createBooking = async (req, res) => {
   try {
@@ -336,42 +343,10 @@ exports.createBooking = async (req, res) => {
     const property = await Property.findById(property_id)
     const agentEmail = req.body.email
 
-    // Create transporter
-    const transporter = nodemailer.createTransport({
-      service: "gmail",
-      auth: {
-        user: process.env.SMTP_EMAIL,
-        pass: process.env.SMTP_PASS,
-      },
-      port: 465,
-    })
 
-    // Prepare booking data
-    const bookingData = { date, time, name, email }
 
-    // Mail to customer with beautiful template
-    const customerMailOptions = {
-      from: process.env.SMTP_EMAIL,
-      to: email,
-      subject: `🏠 Booking Confirmed - ${date} at ${time}`,
-      html: createCustomerConfirmationEmail(bookingData, property),
-    }
+    return sendSuccess(res, "Booking created successfully", { booking }, 200);
 
-    // Mail to agent with professional template
-    const agentMailOptions = {
-      from: process.env.SMTP_EMAIL,
-      to: agentEmail,
-      subject: `🔔 New Property Viewing - ${date} at ${time}`,
-      html: createAgentNotificationEmail(bookingData, property),
-    }
-
-    // Send both emails
-    await Promise.all([
-      transporter.sendMail(customerMailOptions),
-      agentEmail ? transporter.sendMail(agentMailOptions) : Promise.resolve(),
-    ])
-
-    return sendSuccess(res, "Booking created successfully and emails sent", { booking }, 200)
   } catch (err) {
     console.error("Error in createBooking:", err)
     return sendError(res, "Something went wrong while creating the booking", 500, err.message)
@@ -379,7 +354,7 @@ exports.createBooking = async (req, res) => {
 }
 
 exports.signupAndCreateBooking = async (req, res) => {
-  const { name, email, password, phone, image, address, date, time, property_id, rera_doc, rera_id,notes } = req.body;
+  const { name, email, password, phone, image, address, date, time, property_id, rera_doc, rera_id, notes } = req.body;
 
   try {
     // Step 1: Check if user exists
@@ -423,39 +398,39 @@ exports.signupAndCreateBooking = async (req, res) => {
     // Step 4: Populate property details
     const property = await Property.findById(property_id);
 
-    // Step 5: Setup email transporter
-    const transporter = nodemailer.createTransport({
-      service: "gmail",
-      auth: {
-        user: process.env.SMTP_EMAIL,
-        pass: process.env.SMTP_PASS,
-      },
-      port: 465,
-    });
+    // // Step 5: Setup email transporter
+    // const transporter = nodemailer.createTransport({
+    //   service: "gmail",
+    //   auth: {
+    //     user: process.env.SMTP_EMAIL,
+    //     pass: process.env.SMTP_PASS,
+    //   },
+    //   port: 465,
+    // });
 
-    // Step 6: Prepare booking data
-    const bookingData = { date, time, name: user.name, email: user.email };
+    // // Step 6: Prepare booking data
+    // const bookingData = { date, time, name: user.name, email: user.email };
 
-    // Step 7: Send email to customer
-    const customerMailOptions = {
-      from: process.env.SMTP_EMAIL,
-      to: user.email,
-      subject: `🏠 Booking Confirmed - ${date} at ${time}`,
-      html: createCustomerConfirmationEmail(bookingData, property),
-    };
+    // // Step 7: Send email to customer
+    // const customerMailOptions = {
+    //   from: process.env.SMTP_EMAIL,
+    //   to: user.email,
+    //   subject: `🏠 Booking Confirmed - ${date} at ${time}`,
+    //   html: createCustomerConfirmationEmail(bookingData, property),
+    // };
 
-    // Step 8: Send email to agent
-    const agentMailOptions = {
-      from: process.env.SMTP_EMAIL,
-      to: user.email, // agent gets notified
-      subject: `🔔 New Property Viewing - ${date} at ${time}`,
-      html: createAgentNotificationEmail(bookingData, property),
-    };
+    // // Step 8: Send email to agent
+    // const agentMailOptions = {
+    //   from: process.env.SMTP_EMAIL,
+    //   to: user.email, // agent gets notified
+    //   subject: `🔔 New Property Viewing - ${date} at ${time}`,
+    //   html: createAgentNotificationEmail(bookingData, property),
+    // };
 
-    await Promise.all([
-      transporter.sendMail(customerMailOptions),
-      transporter.sendMail(agentMailOptions),
-    ]);
+    // await Promise.all([
+    //   transporter.sendMail(customerMailOptions),
+    //   transporter.sendMail(agentMailOptions),
+    // ]);
 
     // Step 9: Generate token
     const token = jwt.sign({ id: user._id }, JWT_SECRET, { expiresIn: "7d" });
@@ -589,50 +564,52 @@ exports.updateBooking = async (req, res) => {
 
     if (!id) return sendError(res, "Booking ID is required in body", 400);
 
-    // Update the booking
-    const booking = await Booking.findByIdAndUpdate(id, updateData, { new: true });
+    // First update
+    await Booking.findByIdAndUpdate(id, updateData, { new: true });
+
+    // Then fetch with populate
+const booking = await Booking.findById(id).populate({
+  path: "property_id",
+  model: "Property",
+});
+
 
     if (!booking) return sendError(res, "Booking not found", 404);
 
-    // If status is approved, update the related property
-    if (updateData.status === "approved" && updateData.property_id) {
-      const propertyUpdates = {
-        $inc: { visitCount: 1 }, // ✅ increment visit count
-      };
+    console.log("Updated booking with property:", booking);
 
-      // Add booked dates
-      if (booking.startDate && booking.endDate) {
-        propertyUpdates.$push = {
-          bookedDates: {
-            startDate: booking.startDate,
-            endDate: booking.endDate,
-            bookingId: booking._id,
-          },
-        };
-      } else if (booking.date) {
-        propertyUpdates.$push = {
-          bookedDates: {
-            date: booking.date,
-            bookingId: booking._id,
-          },
-        };
+    // Send confirmation email if approved
+    if (updateData.status && updateData.status === "approved") {
+      try {
+        const html = createCustomerConfirmationEmail(
+          booking,
+          booking.property_id // property details now available
+        );
+
+        await transporter.sendMail({
+          from: `"RRProperties" <${process.env.MAIL_USER}>`,
+          to: booking.email,
+          subject: "Your Booking is Confirmed ✅",
+          html,
+        });
+
+        console.log("Confirmation email sent to", booking.email);
+      } catch (mailError) {
+        console.error("Error sending email:", mailError.message);
       }
-
-      // Add agent to agents array
-      if (updateData.agent_id) {
-        propertyUpdates.$addToSet = {
-          agents: updateData.agent_id,
-        };
-      }
-
-      // Combine all updates into one atomic update
-      await Property.findByIdAndUpdate(updateData.property_id, propertyUpdates);
     }
 
-    return sendSuccess(res, "Booking updated successfully", { booking });
-  } catch (err) {
-    console.error("Error in updateBooking:", err);
-    return sendError(res, "Failed to update booking", 500, err.message);
+    res.status(200).json({
+      success: true,
+      message: "Booking updated successfully",
+      data: booking,
+    });
+  } catch (error) {
+    console.error("Update booking error:", error.message);
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
   }
 };
 
